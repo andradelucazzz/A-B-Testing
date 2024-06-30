@@ -1,0 +1,138 @@
+---
+title: "T-Test examples"
+author: "Lucas Andrade"
+date: "2024-06-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(haven)
+library(car)
+library(openxlsx)
+library(magrittr)
+library(kableExtra)
+
+```
+
+
+## Exercicio 1
+O artigo A Critical Appraisal of 98.6 Degrees F, the Upper Limit of the Normal Body Temperature,
+and Other Legacies of Carl Reinhold August Wunderlich?  questiona a nocao de que a verdadeira
+temperatura corporal media eh 98,6. Alem disso ha tambem alguma duvida sobre se as temperaturas
+corporais medias para as mulheres sao iguais as dos homens (nivel de significancia de 0,01).
+
+Os dados sao NormTemp.sas7bdat e o dicionario de dados:
+
+- ID - Identificador do individuo
+- BodyTemp - Temperatura corporal (graus Fahrenheit)
+- Gender - Sexo do individuo
+- HeartRate - Frequencia cardiaca (batimentos por minuto)
+
+Referencia:
+https://jamanetwork.com/journals/jama/article-abstract/400116
+
+### Import Data
+As the dataset is a .sas file I'm using haven package to import it
+
+```{r import-data, echo=FALSE}
+
+temp <- haven::read_sas('dados/normtemp.sas7bdat')
+
+```
+
+### Exploring Data
+
+```{r}
+summary(temp)
+```
+BodyTemp distribution
+```{r}
+temp %>% 
+  ggplot(aes(x=BodyTemp))+
+  geom_density(fill = 'lightgray')+
+  theme_minimal()
+
+temp %>% 
+  ggplot(aes(y= BodyTemp))+
+  geom_boxplot()+
+  theme_minimal()
+```
+
+BodyTemp average by gender
+
+```{r gender-tbl}
+ temp %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(avg = round(mean(BodyTemp, na.rm = TRUE),2))
+  
+
+```
+```{r gender-boxplot}
+temp %>% 
+  ggplot(aes(x = Gender, y=BodyTemp))+
+  geom_boxplot()
+```
+
+```{r}
+
+temp %>% 
+ggplot(aes(x=BodyTemp, fill=Gender))+
+  geom_density(alpha = 0.7)+
+  scale_fill_manual(values = c('orange', 'blue'))
+
+```
+
+### Testing
+
+'questiona a nocao de que a verdadeira temperatura corporal media eh 98,6.'
+
+
+#### Verificando a normalidade da amostra. 
+
+Como a pergunta a ser respondida tem como 
+metrica de comparacao um valor constante, 98,6. Faremos a verificacao da 
+normalidade da propria variavel temperatura
+
+Para o teste de normalidade considerei duas opçoes: o teste KS e o teste de Shapiro Wilks
+O teste Ks só pode ser utilizado quando o tamanho da amaostra é maior que 30 (n > 30).
+Já o teste de Shapiro Wilks é condicionado a amostras de n >= 4 e n =< 2000.
+Na exploracao do dataset vimos que n = 130, e por minha escolha utilizarei o teste KS 
+para verificara a normalidade da amostra.
+
+```{r test-KS }
+
+ks.test(temp$BodyTemp, 
+        'pnorm', 
+        mean(temp$BodyTemp),
+        sd(temp$BodyTemp))
+
+```
+O teste KS usa sempre H0 como normal e um nivel de confianca de 95%. 
+De acordo com o resultado do teste p-value = 0.6474, portanto a distribuicao da variavel 
+temperatura corporal pode ser encarada como uma normal.
+
+#### T test
+
+Coma. normalidade já atestada, podemos fazer o teste 
+para verificar a validade da afirmacao de que a temperatura corporal é em média 98.6
+
+H0: mu = 98.6
+H1: mu <> 98.6
+
+```{r}
+
+t.test(temp$BodyTemp,
+       mu = 98.6)
+
+
+```
+
+De acordo com os resultados do teste (p-value = 2.411e-07) a hipotese nula (H0 = 98.6)
+pode ser rejeitada e podemos afirmar que a mostra nao preovem de uma populacao com média 
+de temperatura corporal igual a 98.6. 
