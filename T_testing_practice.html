@@ -13,7 +13,7 @@
 
 <meta name="date" content="2024-06-29" />
 
-<title>T-Test examples</title>
+<title>Body Temperature - T-Test</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -350,7 +350,7 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">T-Test examples</h1>
+<h1 class="title toc-ignore">Body Temperature - T-Test</h1>
 <h4 class="author">Lucas Andrade</h4>
 <h4 class="date">2024-06-29</h4>
 
@@ -420,8 +420,10 @@ ggplot(aes(x=BodyTemp, fill=Gender))+
 </div>
 <div id="testing" class="section level3">
 <h3>Testing</h3>
-<p>‘questiona a nocao de que a verdadeira temperatura corporal media eh
-98,6.’</p>
+<ol style="list-style-type: decimal">
+<li>‘questiona a nocao de que a verdadeira temperatura corporal media eh
+98,6.’</li>
+</ol>
 <div id="verificando-a-normalidade-da-amostra." class="section level4">
 <h4>Verificando a normalidade da amostra.</h4>
 <p>Como a pergunta a ser respondida tem como metrica de comparacao um
@@ -469,9 +471,99 @@ validade da afirmacao de que a temperatura corporal é em média 98.6</p>
 ## mean of x 
 ##  98.24923</code></pre>
 <p>De acordo com os resultados do teste (p-value = 2.411e-07) a hipotese
-nula (H0 = 98.6) pode ser rejeitada e podemos afirmar que a mostra nao
+nula (H0 = 98.6) foi rejeitada e podemos afirmar que a mostra nao
 preovem de uma populacao com média de temperatura corporal igual a
 98.6.</p>
+<ol start="2" style="list-style-type: decimal">
+<li>Alem disso ha tambem alguma duvida sobre se as temperaturas
+corporais medias para as mulheres sao iguais as dos homens</li>
+</ol>
+</div>
+<div id="verificando-a-normalidade-das-amostras-de-temperatura-de-mulheres-e-homens" class="section level4">
+<h4>Verificando a normalidade das amostras de temperatura de mulheres e
+homens</h4>
+<p>Também utilizaeri o teste KS para verificar a normalidade de ambas as
+amostras</p>
+<pre class="r"><code>female_temp &lt;- temp %&gt;% 
+  dplyr::filter(Gender == &#39;Female&#39;)
+
+ks.test(female_temp$BodyTemp,
+        &#39;pnorm&#39;,
+        mean(female_temp$BodyTemp),
+        sd(female_temp$BodyTemp))</code></pre>
+<pre><code>## Warning in ks.test.default(female_temp$BodyTemp, &quot;pnorm&quot;,
+## mean(female_temp$BodyTemp), : ties should not be present for the one-sample
+## Kolmogorov-Smirnov test</code></pre>
+<pre><code>## 
+##  Asymptotic one-sample Kolmogorov-Smirnov test
+## 
+## data:  female_temp$BodyTemp
+## D = 0.10782, p-value = 0.4365
+## alternative hypothesis: two-sided</code></pre>
+<p>De acordo com os resultados do teste é possivel afirmar que a amostra
+de temperatura corporal feminina segue uma distribuicao normal</p>
+<pre class="r"><code>male_temp &lt;- temp %&gt;% 
+  dplyr::filter(Gender == &#39;Male&#39;)
+
+ks.test(male_temp$BodyTemp,
+        &#39;pnorm&#39;,
+        mean(male_temp$BodyTemp),
+        sd(male_temp$BodyTemp))</code></pre>
+<pre><code>## Warning in ks.test.default(male_temp$BodyTemp, &quot;pnorm&quot;,
+## mean(male_temp$BodyTemp), : ties should not be present for the one-sample
+## Kolmogorov-Smirnov test</code></pre>
+<pre><code>## 
+##  Asymptotic one-sample Kolmogorov-Smirnov test
+## 
+## data:  male_temp$BodyTemp
+## D = 0.068515, p-value = 0.9204
+## alternative hypothesis: two-sided</code></pre>
+<p>De acordo com os resultados do teste é possivel afirmar que a amostra
+de temperatura corporal masculina tambem segue uma distribuicao
+normal.</p>
+</div>
+<div id="verificando-homogeneidade-de-variancia-entre-as-amostras" class="section level4">
+<h4>Verificando homogeneidade de variancia entre as amostras</h4>
+<p>Um teste parametrico comparativo de duas amostras exige que as
+variancias sejam homogeneas.</p>
+<pre class="r"><code>leveneTest(BodyTemp ~ Gender,
+            data = temp)</code></pre>
+<pre><code>## Warning in leveneTest.default(y = y, group = group, ...): group coerced to
+## factor.</code></pre>
+<pre><code>## Levene&#39;s Test for Homogeneity of Variance (center = median)
+##        Df F value Pr(&gt;F)
+## group   1  0.0635 0.8014
+##       128</code></pre>
+<p>O resultado do teste de Levene indica que as amostras possuem
+variancias homogeneas, sendo assim podemos aplicar o teste t para duas
+amostras</p>
+</div>
+<div id="t---test" class="section level4">
+<h4>T - Test</h4>
+<p>Existem duas possibilidades para aplicacao de teste T para comparar
+médias de amostras distintas. A escolha do teste ideal é baseada na
+relacao de dependencia das amostras. No caso em questao as amostras são
+independentes.</p>
+<p>A pergunta que nos move questiona se a temperatura corporal de homens
+e mulheres é igual, portanto as hipoteses formuladas serao:</p>
+<p>H0: m_mulheres = m_homens H1: m_mulheres &lt;&gt; m_homens</p>
+<pre class="r"><code>t.test(BodyTemp ~ Gender,
+       data = temp,
+       var.equal = TRUE)</code></pre>
+<pre><code>## 
+##  Two Sample t-test
+## 
+## data:  BodyTemp by Gender
+## t = 2.2854, df = 128, p-value = 0.02393
+## alternative hypothesis: true difference in means between group Female and group Male is not equal to 0
+## 95 percent confidence interval:
+##  0.03882216 0.53963938
+## sample estimates:
+## mean in group Female   mean in group Male 
+##             98.39385             98.10462</code></pre>
+<p>Considerando os resultados do teste e um nivel de confianca igual a
+99% nao é possivel rejeitar a hipotese de que a temperatura corporal de
+homens e mulheres seja igual</p>
 </div>
 </div>
 </div>

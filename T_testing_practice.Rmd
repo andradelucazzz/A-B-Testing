@@ -1,5 +1,5 @@
 ---
-title: "T-Test examples"
+title: "Body Temperature - T-Test"
 author: "Lucas Andrade"
 date: "2024-06-29"
 output: html_document
@@ -90,7 +90,7 @@ ggplot(aes(x=BodyTemp, fill=Gender))+
 
 ### Testing
 
-'questiona a nocao de que a verdadeira temperatura corporal media eh 98,6.'
+1) 'questiona a nocao de que a verdadeira temperatura corporal media eh 98,6.'
 
 
 #### Verificando a normalidade da amostra. 
@@ -134,5 +134,73 @@ t.test(temp$BodyTemp,
 ```
 
 De acordo com os resultados do teste (p-value = 2.411e-07) a hipotese nula (H0 = 98.6)
-pode ser rejeitada e podemos afirmar que a mostra nao preovem de uma populacao com média 
+foi rejeitada e podemos afirmar que a mostra nao preovem de uma populacao com média 
 de temperatura corporal igual a 98.6. 
+
+2) Alem disso ha tambem alguma duvida sobre se as temperaturas
+corporais medias para as mulheres sao iguais as dos homens
+
+#### Verificando a normalidade das amostras de temperatura de mulheres e homens
+
+Também utilizaeri o teste KS para verificar a normalidade de ambas as amostras
+
+```{r}
+female_temp <- temp %>% 
+  dplyr::filter(Gender == 'Female')
+
+ks.test(female_temp$BodyTemp,
+        'pnorm',
+        mean(female_temp$BodyTemp),
+        sd(female_temp$BodyTemp))
+
+```
+
+De acordo com os resultados do teste é possivel afirmar que a amostra de temperatura 
+corporal feminina segue uma distribuicao normal
+
+```{r}
+male_temp <- temp %>% 
+  dplyr::filter(Gender == 'Male')
+
+ks.test(male_temp$BodyTemp,
+        'pnorm',
+        mean(male_temp$BodyTemp),
+        sd(male_temp$BodyTemp))
+
+```
+
+De acordo com os resultados do teste é possivel afirmar que a amostra de temperatura 
+corporal masculina tambem segue uma distribuicao normal.
+
+#### Verificando homogeneidade de variancia entre as amostras
+
+Um teste parametrico comparativo de duas amostras exige que as variancias sejam homogeneas.
+
+```{r}
+leveneTest(BodyTemp ~ Gender,
+            data = temp)
+
+```
+
+O resultado do teste de Levene indica que as amostras possuem variancias homogeneas, 
+sendo assim podemos aplicar o teste t para duas amostras
+
+#### T - Test
+
+Existem duas possibilidades para aplicacao de teste T para comparar médias de amostras distintas.
+A escolha do teste ideal é baseada na relacao de dependencia das amostras.
+No caso em questao as amostras são independentes.
+
+A pergunta que nos move questiona se a temperatura corporal de homens e mulheres é igual,
+portanto as hipoteses formuladas serao:
+
+H0: m_mulheres = m_homens
+H1: m_mulheres <> m_homens
+
+```{r}
+t.test(BodyTemp ~ Gender,
+       data = temp,
+       var.equal = TRUE)
+```
+Considerando os resultados do teste e um nivel de confianca igual a 99% 
+nao é possivel rejeitar a hipotese de que a temperatura corporal de homens e mulheres seja igual
